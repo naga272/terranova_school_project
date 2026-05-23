@@ -1,0 +1,407 @@
+{% extends "component/base.html" %}
+
+{% block title %}
+Profilo - {{ user.user.user_id.username }}
+{% endblock %}
+
+{% block main %}
+
+<main class="relative min-h-screen px-6 py-16">
+    <!-- BACKGROUND FX -->
+    <div class="absolute inset-0 -z-10">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(0,200,255,0.25),transparent_60%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_75%_80%,rgba(255,0,150,0.25),transparent_60%)]"></div>
+        <div class="absolute inset-0 backdrop-blur-3xl"></div>
+    </div>
+
+    <!-- PROFILE CARD -->
+    <div class="max-w-5xl mx-auto">
+        <div class="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+
+            <!-- HEADER -->
+            <div class="flex justify-between items-center mb-10">
+                <div>
+                    <h1 class="text-4xl font-black tracking-tight gradient-text">
+                        {{ user.user.user_id.first_name }} {{ user.user.user_id.last_name }}
+                    </h1>
+                    <p class="text-gray-400 mt-2">
+                        Username: {{ user.user.user_id.username }}
+                    </p>
+                </div>
+
+                <form action="{% url 'logout' %}" method="POST">
+                    {% csrf_token %}
+                    <button
+                        type="submit"
+                        class="px-6 py-3 rounded-xl font-semibold
+                               bg-gradient-to-r from-red-500 to-pink-600
+                               hover:scale-[1.03] transition-transform">
+                        Logout
+                    </button>
+                </form>
+            </div>
+
+            <!-- INFO GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                <div class="p-6 rounded-2xl glass-effect card-hover">
+                    <p class="text-sm text-gray-400">Ruolo</p>
+                    <p class="text-xl font-semibold mt-2">
+                        {% if user.ruolo == "DIPE" %}Dipendente{% endif %}
+                        {% if user.ruolo == "RESP" %}Responsabile{% endif %}
+                    </p>
+                </div>
+
+                <div class="p-6 rounded-2xl glass-effect card-hover">
+                    <p class="text-sm text-gray-400">Team</p>
+                    <p class="text-xl font-semibold mt-2">
+                        ID {{ user.user.cod_team.id }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="flex gap-4 mb-8">
+                <button
+                    onclick="form_ferie()"
+                    class="px-6 py-3 rounded-xl font-semibold
+                           bg-gradient-to-r from-blue-500 to-cyan-500
+                           hover:scale-[1.03] transition-transform">
+                    Prenota ferie
+                </button>
+
+                <button
+                    onclick="view_cronologia()"
+                    class="px-6 py-3 rounded-xl font-semibold
+                           bg-gradient-to-r from-purple-500 to-fuchsia-600
+                           hover:scale-[1.03] transition-transform">
+                    Cronologia ferie
+                </button>
+                {% if user.ruolo == "RESP" %}
+                    <button
+                        onclick="accetta_richieste()"
+                        class="px-6 py-3 rounded-xl font-semibold
+                            bg-gradient-to-r from-blue-500 to-cyan-500
+                            hover:scale-[1.03] transition-transform">
+                        Accetta richieste
+                    </button>
+                {% endif %}
+            </div>
+
+            <!-- FERIE -->
+            <div>
+                <!-- FORM FERIE -->
+                <div id="form_x_ferie" class="block">
+                    <div class="p-6 rounded-2xl glass-effect">
+                        <h2 class="text-2xl font-bold mb-6">Prenotazione ferie</h2>
+
+                        <form method="post" class="space-y-6">
+                            {% csrf_token %}
+
+                            <input type="hidden" name="data_selezionata" id="data_selezionata">
+
+                            <!-- HEADER ANNO -->
+                            <div class="flex justify-between items-center">
+                                <button type="button" onclick="changeYear(-1)"
+                                        class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">‹</button>
+
+                                <h3 id="year-title" class="text-xl font-bold"></h3>
+
+                                <button type="button" onclick="changeYear(1)"
+                                        class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20">›</button>
+                            </div>
+
+                            <!-- CALENDARIO ANNUO -->
+                            <div id="year-calendar" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+
+                            <div class="text-sm text-gray-400">
+                                Giorno selezionato:
+                                <span id="selected-label" class="font-semibold text-black">—</span>
+                            </div>
+
+                            <button
+                                type="submit"
+                                class="w-full py-3 rounded-xl font-semibold
+                                    bg-gradient-to-r from-blue-500 to-cyan-500
+                                    hover:scale-[1.02] transition-transform">
+                                Invia richiesta
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- CRONOLOGIA -->
+                <div id="ferie_cronologia" class="hidden">
+                    <div class="p-6 rounded-2xl glass-effect">
+                        <h2 class="text-2xl font-bold mb-6">Storico ferie</h2>
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-white/10">
+                                    <th class="pb-3">Data inizio</th>
+                                    <th class="pb-3">Data fine</th>
+                                    <th class="pb-3">Stato</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ferie in storico_ferie_user %}
+                                <tr class="border-b border-white/5">
+                                    <td class="py-3">{{ ferie.dataI }}</td>
+                                    <td class="py-3">{{ ferie.dataF }}</td>
+                                    <td class="py-3">
+                                        {% if ferie.stato == 0 %}
+                                            Rifiutato
+                                        {% elif ferie.stato == 1 %}
+                                            In attesa
+                                        {% else %}
+                                            Accettato
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if user.ruolo == "RESP" %}
+
+                <!-- ACCETTA RICHIESTE -->
+                <div id="accetta_richieste" class="hidden">
+                    <div class="p-6 rounded-2xl glass-effect">
+                        <h2 class="text-2xl font-bold mb-6">Richieste</h2>
+                        <table class="w-full text-left border-separate border-spacing-y-3">
+                            <thead>
+                                <tr class="border-b border-white/5 align-top">
+                                    <th class="pb-3">Utente</th>
+                                    <th class="pb-3">Data inizio</th>
+                                    <th class="pb-3">Data fine</th>
+                                    <th class="pb-3">task assegnata</th>
+                                    <th class="pb-3">Stato</th>
+                                    <th class="pb-3">Modifica stato</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ferie in ferie_team %}
+                                <tr class="border-b border-white/5">
+                                    <td class="py-4 pr-4">{{ ferie.user.user_id.username }}</td>
+                                    <td class="py-4 pr-4">{{ ferie.dataI }}</td>
+                                    <td class="py-4 pr-4">{{ ferie.dataF }}</td>
+                                    <td class="py-4 pr-6 max-w-xs">
+                                        <div class="line-clamp-3 break-words leading-relaxed">
+                                            {{ ferie.user.task_assegnata }}
+                                        </div>
+                                    </td>
+                                    <td class="py-4 pr-4">
+                                        {% if ferie.stato == 1 %}
+                                            In attesa di approvazione
+                                        {% elif ferie.stato == 0%}
+                                            Richiesta rifiutata
+                                        {% else %}
+                                            Richiesta approvata
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-4 pr-4">
+                                        <form method="POST" action="{% url 'cambia_stato_ferie' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="ferie_id" value="{{ ferie.id }}">
+                                            <select name="stato" class="px-2 py-1 rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                                                <option value="2" class="bg-green-100 text-green-800" {% if ferie.stato == 2 %}selected{% endif %}>Approva</option>
+                                                <option value="0" class="bg-red-100 text-red-800" {% if ferie.stato == 0 %}selected{% endif %}>Rifiuta</option>
+                                                <option value="1" class="bg-yellow-100 text-yellow-800" {% if ferie.stato == 1 %}selected{% endif %}>In attesa</option>
+                                            </select>
+                                            <button type="submit" class="ml-2 px-3 py-1 rounded bg-blue-500 text-white">Salva</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script>
+    const PERIODO_START = new Date("{{ periodo_start }}");
+    const PERIODO_END   = new Date("{{ periodo_end }}");
+    const GIORNI_PENDING = new Set({{ giorni_pending|safe }});
+    const GIORNI_APPROVATI = new Set({{ giorni_approvati|safe }});
+
+    const yearTitle = document.getElementById("year-title");
+    const calendar = document.getElementById("year-calendar");
+    const hiddenInput = document.getElementById("data_selezionata");
+    const selectedLabel = document.getElementById("selected-label");
+
+    const monthNames = [
+        "Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno",
+        "Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"
+    ];
+    const days = [
+        "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
+    ];
+</script>
+
+<script>
+    function toISODateLocal(y, m, d)
+    {
+        const month = String(m + 1).padStart(2, "0");
+        const day = String(d).padStart(2, "0");
+        return `${y}-${month}-${day}`;
+    }
+
+    let currentYear = new Date().getFullYear();
+    let selectedButton = null;
+
+    function renderYear() {
+        yearTitle.textContent = currentYear;
+        calendar.innerHTML = "";
+
+        for (let m = 0; m < 12; m++) {
+            const monthBox = document.createElement("div");
+            monthBox.className = "p-4 rounded-xl bg-black/40";
+
+            const title = document.createElement("h4");
+            title.textContent = monthNames[m];
+            title.className = "text-center font-semibold mb-3";
+            monthBox.appendChild(title);
+
+            const daysGrid = document.createElement("div");
+            daysGrid.className = "grid grid-cols-7 gap-1 text-sm text-center";
+
+            for (const dayName of days) {
+                const dayHeader = document.createElement("div");
+                dayHeader.textContent = dayName;
+                dayHeader.className = `
+                    font-bold text-black-400 text-xs uppercase
+                    py-1
+                `;
+                daysGrid.appendChild(dayHeader);
+            }
+
+            const firstDay = new Date(currentYear, m, 1).getDay();
+            const offset = (firstDay + 6) % 7;
+            const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+
+            for (let i = 0; i < offset; i++)
+                daysGrid.appendChild(document.createElement("div"));
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.textContent = d;
+
+                const date = new Date(currentYear, m, d);
+                const iso = toISODateLocal(currentYear, m, d);
+
+                const inPeriodo = date >= PERIODO_START && date <= PERIODO_END;
+
+                const occupato = GIORNI_PENDING.has(iso);
+                const approvato = GIORNI_APPROVATI.has(iso);
+
+                const isSunday = date.getDay() === 0;
+
+                if (!inPeriodo || isSunday) {
+                    btn.disabled = true;
+                    btn.className = `
+                        py-1 rounded
+                        bg-red-500/30 text-red-300
+                        cursor-not-allowed
+                    `;
+                } else if (approvato) {
+                    btn.disabled = true;
+                    btn.className = `
+                        py-1 rounded
+                        bg-green-900 text-green-200
+                        cursor-not-allowed
+                    `;
+                } else if (occupato) {
+                    btn.disabled = true;
+                    btn.className = `
+                        py-1 rounded
+                        bg-yellow-500/30 text-yellow-200
+                        cursor-not-allowed
+                    `;
+                } else {
+                    btn.className = `
+                        py-1 rounded
+                        bg-white/5 hover:bg-white/20
+                        transition
+                    `;
+                    btn.onclick = () => selectDay(currentYear, m, d, btn);
+                }
+
+                daysGrid.appendChild(btn);
+            }
+
+            monthBox.appendChild(daysGrid);
+            calendar.appendChild(monthBox);
+        }
+    }
+
+    function selectDay(y, m, d, btn) {
+        if (selectedButton) {
+            selectedButton.classList.remove("bg-green-500", "text-black");
+        }
+
+        btn.classList.add("bg-green-500", "text-black");
+        selectedButton = btn;
+
+        const date = new Date(y, m, d);
+        const iso = toISODateLocal(y, m, d);
+
+        hiddenInput.value = iso;
+        selectedLabel.textContent = date.toLocaleDateString("it-IT");
+    }
+
+    function changeYear(delta) {
+        currentYear += delta;
+        selectedButton = null;
+        hiddenInput.value = "";
+        selectedLabel.textContent = "—";
+        renderYear();
+    }
+
+    renderYear();
+</script>
+
+<script>
+    {% if user.ruolo == "RESP" %}
+    function accetta_richieste()
+    {
+        document.getElementById("form_x_ferie").classList.add("hidden");
+        document.getElementById("ferie_cronologia").classList.add("hidden");
+        document.getElementById("accetta_richieste").classList.remove("hidden");   
+    }
+    
+    function form_ferie()
+    {
+        document.getElementById("form_x_ferie").classList.remove("hidden");
+        document.getElementById("ferie_cronologia").classList.add("hidden");
+        document.getElementById("accetta_richieste").classList.add("hidden");
+    }
+
+    function view_cronologia()
+    {
+        document.getElementById("form_x_ferie").classList.add("hidden");
+        document.getElementById("ferie_cronologia").classList.remove("hidden");
+        document.getElementById("accetta_richieste").classList.add("hidden");   
+    }
+
+    {% else %}
+    function form_ferie()
+    {
+        document.getElementById("form_x_ferie").classList.remove("hidden");
+        document.getElementById("ferie_cronologia").classList.add("hidden");
+    }
+
+    function view_cronologia()
+    {
+        document.getElementById("form_x_ferie").classList.add("hidden");
+        document.getElementById("ferie_cronologia").classList.remove("hidden");
+    }
+    {% endif %}
+</script>
+{% endblock %}

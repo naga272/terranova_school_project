@@ -1,0 +1,93 @@
+{% extends 'component/base.html' %}
+{% load static %}
+
+
+{% block title %} Login {% endblock %}
+
+{% block main %}
+    <main class="relative min-h-screen flex items-center justify-center">
+        <!-- BACKGROUND FX -->
+        <div class="absolute inset-0">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(0,200,255,0.25),transparent_60%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(255,0,150,0.25),transparent_60%)]"></div>
+            <div class="absolute inset-0 backdrop-blur-3xl"></div>
+        </div>
+
+        <!-- LOGIN CARD -->
+        <div class="relative z-10 w-full max-w-md">
+            <div class="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
+
+                <h1 class="text-4xl font-black mb-4 tracking-tight">Accesso</h1>
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- USERNAME -->
+                    <div class="relative group">
+                        <label class="block text-sm text-gray-400 mb-2 tracking-wide">Username</label>
+
+                        <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/30 to-purple-600/30 blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+
+                        <input
+                            type="text"
+                            placeholder="Inserisci username"
+                            name="{{ form.username.name }}"
+                            autocomplete="username"
+                            class="
+                                relative w-full px-4 py-3 rounded-xl
+                                bg-black/60 text-white placeholder-gray-500
+                                border border-white/10
+                                focus:outline-none
+                                focus:ring-2 focus:ring-blue-500/60
+                                transition-all duration-300
+                            "
+                        >
+                    </div>
+
+                    <!-- PASSWORD -->
+                    <div class="relative group">
+                        <label class="block text-sm text-gray-400 mb-2 tracking-wide">
+                            Password
+                        </label>
+
+                        <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/30 to-pink-600/30 blur opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+
+                        <input
+                            type="password"
+                            placeholder="Inserisci password"
+                            name="{{ form.password.name }}"
+                            autocomplete="current-password"
+                            class="
+                                relative w-full px-4 py-3 rounded-xl
+                                bg-black/60 text-white placeholder-gray-500
+                                border border-white/10
+                                focus:outline-none
+                                focus:ring-2 focus:ring-purple-500/60
+                                transition-all duration-300
+                            "
+                        >
+                    </div>
+
+
+                    {% if form.username.errors %}
+                        <div class="text-red-400 text-sm">Credenziali non valide</div>
+                    {% endif %}
+
+                    {% if form.password.errors %}
+                        <div class="text-red-400 text-sm">Credenziali non valide</div>
+                    {% endif %}
+
+                    {% if form.non_field_errors.0 %}
+                        <div class="text-red-400 text-sm">Credenziali non valide</div>
+                    {% endif %}
+
+                    <button type="submit" class="w-full py-3 mt-6 rounded-xl text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-[1.02] transition-transform">Entra nel sistema</button>
+                </form>
+
+                <div class="mt-8 text-center text-sm text-gray-500">
+                    <a href="/password_reset">Hai dimenticato la password?</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+{% endblock %}
