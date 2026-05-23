@@ -1,0 +1,8 @@
+namedb="terranova"
+user="root"
+password=""
+ipdb="localhost"
+
+EMAIL_HOST_USER="loremipsum@gmail.com"
+EMAIL_HOST_PASSWORD="______________"
+DEFAULT_FROM_EMAIL="loremipsum@gmail.com"
